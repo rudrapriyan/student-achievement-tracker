@@ -2,23 +2,19 @@
 trigger:
 - main
 
+# ADDED THIS BLOCK to correctly link your variable group at the pipeline level.
+variables:
+- group: WebApp-Secrets
+
 
 variables:
-  azureServiceConnection: 'AzureStudentSubscription' 
-  variableGroupName: 'WebApp-Secrets'               # Your variable group name
-
-  # Azure Resource details
-  resourceGroupName: 'cloud-project'                # Your Resource Group name
-  # UPDATE THIS with the name of your Azure App Service for the backend
+  azureServiceConnection: 'AzureStudentSubscription-WIF' 
+  resourceGroupName: 'cloud-project'                
   backendAppName: 'achievement-log'        
-  # UPDATE THIS with the name of your Azure Static Web App
   frontendAppName: 'achievement-log'      
-
-  # Project structure details
   frontendFolder: 'frontend'
   serverFolder: 'server'
 
-# A pipeline is composed of stages. We'll have a Build stage and a Deploy stage.
 stages:
 - stage: Build
   displayName: 'Build Stage'
@@ -30,7 +26,7 @@ stages:
     steps:
     - task: NodeTool@0
       inputs:
-        versionSpec: '20.x' # Using Node.js version 20
+        versionSpec: '20.x'
       displayName: 'Install Node.js 20.x'
 
     - script: |
@@ -42,7 +38,7 @@ stages:
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Frontend Artifact'
       inputs:
-        targetPath: '$(frontendFolder)/build' # Change 'build' to 'dist' if your framework uses that
+        targetPath: '$(frontendFolder)/build'
         artifact: 'frontend_dist'
 
   - job: Build_Server
@@ -52,7 +48,7 @@ stages:
     steps:
     - task: NodeTool@0
       inputs:
-        versionSpec: '20.x' # Using Node.js version 20
+        versionSpec: '20.x'
       displayName: 'Install Node.js 20.x'
 
     - script: |
@@ -88,18 +84,13 @@ stages:
       runOnce:
         deploy:
           steps:
-          # Link the variable group to this deployment job
-          - task: UseVariableGroup@1
-            inputs:
-              groupName: $(variableGroupName)
+          # REMOVED the UseVariableGroup task from here. It is no longer needed.
 
-          # Download build artifacts
           - task: DownloadPipelineArtifact@2
             displayName: 'Download All Artifacts'
             inputs:
               path: '$(Pipeline.Workspace)'
 
-          # Deploy Backend to Azure App Service
           - task: AzureWebApp@1
             displayName: 'Deploy Backend to App Service'
             inputs:
@@ -107,9 +98,8 @@ stages:
               appType: 'webAppLinux'
               appName: $(backendAppName)
               package: '$(Pipeline.Workspace)/server_dist/server.zip'
-              runtimeStack: 'NODE|20-lts' # Using Node.js version 20
+              runtimeStack: 'NODE|20-lts'
 
-          # Inject all 8 of your secrets into App Service Configuration
           - task: AzureAppServiceSettings@1
             displayName: 'Update Backend App Settings with Secrets'
             inputs:
@@ -128,7 +118,6 @@ stages:
                   { "name": "COSMOS_CONTAINER_ID", "value": "$(COSMOS_CONTAINER_ID)", "slotSetting": false }
                 ]
 
-          # Deploy Frontend to Azure Static Web App
           - task: AzureStaticWebApp@0
             displayName: 'Deploy Frontend to Static Web App'
             inputs:
