@@ -2,18 +2,24 @@
 trigger:
 - main
 
-# ADDED THIS BLOCK to correctly link your variable group at the pipeline level.
 variables:
-- group: WebApp-Secrets
+  # This links your secret variable group
+  - group: WebApp-Secrets
 
-
-variables:
-  azureServiceConnection: 'AzureStudentSubscription-WIF' 
-  resourceGroupName: 'cloud-project'                
-  backendAppName: 'achievement-log'        
-  frontendAppName: 'achievement-log'      
-  frontendFolder: 'frontend'
-  serverFolder: 'server'
+  # These define the other pipeline variables using the correct list syntax
+  # !!! Remember to check these placeholder values !!!
+  - name: azureServiceConnection
+    value: 'AzureStudentSubscription-WIF' 
+  - name: resourceGroupName
+    value: 'cloud-project'                
+  - name: backendAppName
+    value: 'achievement-log'        
+  - name: frontendAppName
+    value: 'achievement-log'      
+  - name: frontendFolder
+    value: 'frontend'
+  - name: serverFolder
+    value: 'server'
 
 stages:
 - stage: Build
@@ -84,8 +90,6 @@ stages:
       runOnce:
         deploy:
           steps:
-          # REMOVED the UseVariableGroup task from here. It is no longer needed.
-
           - task: DownloadPipelineArtifact@2
             displayName: 'Download All Artifacts'
             inputs:
