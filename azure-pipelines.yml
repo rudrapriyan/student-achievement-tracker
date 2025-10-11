@@ -36,8 +36,11 @@ stages:
       displayName: 'Install Node.js 20.x'
 
     - script: |
+        echo "--- SCRIPT STARTING ---"
         npm install
+        echo "--- NPM INSTALL COMPLETE, RUNNING BUILD NOW ---"
         npm run build
+        echo "--- SCRIPT FINISHED ---"
       displayName: 'Install dependencies and build frontend'
       workingDirectory: '$(frontendFolder)'
 
@@ -127,4 +130,4 @@ stages:
             inputs:
               azure_static_web_apps_api_token: $(deployment_token)
               app_location: '$(Pipeline.Workspace)/frontend_dist'
-              output_location: 'dist'
+              output_location: ''
