@@ -2,12 +2,9 @@
 trigger:
 - main
 
-# Define variables for reuse.
-# !!! IMPORTANT: PLEASE UPDATE THE 3 PLACEHOLDER VALUES BELOW !!!
+
 variables:
-  # Azure DevOps details
-  # Verify this is the exact name of the service connection you created in Step 3.3
-  azureServiceConnection: 'AzureStudentSubscription-WIF' 
+  azureServiceConnection: 'AzureStudentSubscription' 
   variableGroupName: 'WebApp-Secrets'               # Your variable group name
 
   # Azure Resource details
