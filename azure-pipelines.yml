@@ -9,7 +9,7 @@ variables:
   # These define the other pipeline variables using the correct list syntax
   # !!! Remember to check these placeholder values !!!
   - name: azureServiceConnection
-    value: 'AzureStudentSubscription-WIF' 
+    value: 'AzureStudentSubscription' 
   - name: resourceGroupName
     value: 'cloud-project'                
   - name: backendAppName
