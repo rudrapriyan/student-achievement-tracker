@@ -127,4 +127,4 @@ stages:
             inputs:
               azure_static_web_apps_api_token: $(deployment_token)
               app_location: '$(Pipeline.Workspace)/frontend_dist'
-              output_location: ''
+              output_location: 'dist'
