@@ -28,7 +28,7 @@ stages:
   - job: Build_Frontend
     displayName: 'Build Frontend Artifact'
     pool:
-      vmImage: 'ubuntu-latest'
+      name: local
     steps:
     - task: NodeTool@0
       inputs:
@@ -50,7 +50,7 @@ stages:
   - job: Build_Server
     displayName: 'Build Server Artifact'
     pool:
-      vmImage: 'ubuntu-latest'
+      name: local
     steps:
     - task: NodeTool@0
       inputs:
@@ -85,7 +85,7 @@ stages:
     displayName: 'Deploy to Azure'
     environment: 'production'
     pool:
-      vmImage: 'ubuntu-latest'
+      name: local
     strategy:
       runOnce:
         deploy:
