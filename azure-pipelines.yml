@@ -35,13 +35,14 @@ stages:
         versionSpec: '20.x'
       displayName: 'Install Node.js 20.x'
 
-    - task: CmdLine@2
+    - script: |
+        echo "--- SCRIPT STARTING ---"
+        npm install
+        echo "--- NPM INSTALL COMPLETE, RUNNING BUILD NOW ---"
+        npm run build
+        echo "--- SCRIPT FINISHED ---"
       displayName: 'Install dependencies and build frontend'
-      inputs:
-        script: |
-          npm install
-          npm run build
-        workingDirectory: '$(frontendFolder)'
+      workingDirectory: '$(frontendFolder)'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Frontend Artifact'
