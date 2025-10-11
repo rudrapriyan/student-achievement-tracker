@@ -44,7 +44,7 @@ stages:
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Frontend Artifact'
       inputs:
-        targetPath: '$(frontendFolder)/build'
+        targetPath: '$(frontendFolder)/dist'
         artifact: 'frontend_dist'
 
   - job: Build_Server
