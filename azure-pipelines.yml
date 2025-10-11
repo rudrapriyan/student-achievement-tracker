@@ -36,10 +36,10 @@ stages:
       displayName: 'Install Node.js 20.x'
 
     - script: |
-        cd $(frontendFolder)
         npm install
         npm run build
       displayName: 'Install dependencies and build frontend'
+      workingDirectory: '$(frontendFolder)'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Frontend Artifact'
