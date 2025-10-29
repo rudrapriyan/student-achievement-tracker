@@ -13,9 +13,9 @@ console.log("--- ROUTER RECEIVED ---", achievementController);
 
 const authMiddleware = require('../middleware/authMiddleware');
 
-// --- Public Route ---
+// Student Route (Protected by authMiddleware)
 // POST /api/achievements/log
-router.post('/log', achievementController.logAchievement);
+router.post('/log', authMiddleware, achievementController.logAchievement);
 
 
 // --- Admin-Only Routes (Protected by authMiddleware) ---

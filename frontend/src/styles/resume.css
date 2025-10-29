@@ -1,0 +1,154 @@
+/* Resume Container */
+.resume-container {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+/* Resume A4 Styles */
+.resume-output {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm;
+  margin: 0 auto;
+  background: white;
+  color: black;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11pt;
+  line-height: 1.3;
+  box-sizing: border-box;
+  position: relative;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+/* Typography */
+.resume-output h1 {
+  font-size: 24pt;
+  margin-bottom: 8pt;
+  color: black;
+  text-align: center;
+  font-weight: bold;
+  font-family: "Times New Roman", Times, serif;
+  border-bottom: 2px solid black;
+  padding-bottom: 4pt;
+}
+
+.resume-output h2 {
+  font-size: 14pt;
+  margin-top: 16pt;
+  margin-bottom: 8pt;
+  color: black;
+  border-bottom: 1px solid black;
+  padding-bottom: 4pt;
+  font-family: "Times New Roman", Times, serif;
+  font-weight: bold;
+}
+
+.resume-output h3 {
+  font-size: 12pt;
+  margin-top: 12pt;
+  margin-bottom: 6pt;
+  color: black;
+  font-family: "Times New Roman", Times, serif;
+  font-weight: bold;
+}
+
+.resume-output p, .resume-output li {
+  font-size: 11pt;
+  line-height: 1.4;
+  color: black;
+  margin-bottom: 4pt;
+  font-family: "Times New Roman", Times, serif;
+}
+
+.resume-output ul {
+  margin-top: 4pt;
+  margin-bottom: 8pt;
+  padding-left: 20pt;
+  list-style-type: disc;
+}
+
+.resume-output a {
+  text-decoration: none;
+  color: black;
+}
+
+/* Sections spacing */
+.resume-output > section {
+  margin-bottom: 14pt;
+  page-break-inside: avoid;
+}
+
+/* Contact info section */
+.resume-output .contact-info {
+  text-align: center;
+  margin: 12pt 0 16pt 0;
+  line-height: 1.3;
+  font-size: 11pt;
+  font-family: "Times New Roman", Times, serif;
+}
+
+/* Skills section */
+.resume-output .skills-section {
+  column-count: 2;
+  column-gap: 24pt;
+  margin-bottom: 12pt;
+}
+
+.resume-output .skills-category {
+  break-inside: avoid;
+  margin-bottom: 8pt;
+}
+
+/* Education & Experience sections */
+.resume-output .education-item,
+.resume-output .experience-item {
+  margin-bottom: 10pt;
+  page-break-inside: avoid;
+}
+
+/* Achievements & Projects */
+.resume-output .achievement-item,
+.resume-output .project-item {
+  margin-bottom: 8pt;
+  page-break-inside: avoid;
+}
+
+/* Objective section */
+.resume-output .objective {
+  text-align: justify;
+  margin: 12pt 0;
+  line-height: 1.4;
+}
+
+/* Print-specific styles */
+@media print {
+  .resume-container {
+    padding: 0;
+    background: none;
+  }
+
+  .resume-output {
+    width: 210mm;
+    height: 297mm;
+    padding: 20mm !important;
+    margin: 0 !important;
+    background: white !important;
+    color: black !important;
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 11pt !important;
+    line-height: 1.3 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}

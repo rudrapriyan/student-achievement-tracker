@@ -12,23 +12,42 @@ const container = getContainer();
  */
 const logAchievement = async (req, res) => {
     try {
+        // Debug log the incoming request
+        console.log('Received achievement submission:', {
+            body: req.body,
+            user: req.user,
+            headers: req.headers
+        });
+
         const {
-            studentName,
-            rollNumber,
             achievementTitle,
-            achievementDescription,
             category,
             level,
-            achievementDate,
-            issuingAuthority,
-            evidenceLink // Now a required field
+            description,
+            evidenceLink,
+            date
         } = req.body;
 
+        // Get student info from the JWT token
+        if (!req.user) {
+            console.error('No user data in request. Token validation may have failed.');
+            return res.status(401).json({ message: 'Authentication required. Please log in again.' });
+        }
+
+        // Extract student name from the email/username (temporary solution)
+        const studentName = req.user.username.split('@')[0]; // Or you could use the rollNumber for now
+        const rollNumber = req.user.rollNumber;
+
+        if (!rollNumber) {
+            console.error('Missing roll number in token:', req.user);
+            return res.status(401).json({ message: 'Invalid user data. Please log in again.' });
+        }
+
         // --- UPDATED VALIDATION ---
-        // Basic validation now includes evidenceLink
-        if (!studentName || !rollNumber || !achievementTitle || !category || !level || !achievementDate || !issuingAuthority || !evidenceLink) {
+        // Basic validation for required fields from the form
+        if (!achievementTitle || !category || !level || !description || !date) {
             return res.status(400).json({
-                message: 'Missing required fields: All fields, including Evidence Link, are now required.'
+                message: 'Please fill out all required fields: Title, Category, Level, Description, and Date'
             });
         }
 
@@ -50,17 +69,17 @@ const logAchievement = async (req, res) => {
 
         const newAchievement = {
             id: uuidv4(),
-            studentName,
+            studentName, // From email username
             rollNumber,
             achievementTitle,
-            achievementDescription,
+            achievementDescription: description,
             category,
             level,
-            achievementDate,
-            issuingAuthority,
-            evidenceLink,
+            achievementDate: date,
+            evidenceLink: evidenceLink || '', // Optional
             status: 'pending',
-            dateLogged: new Date().toISOString()
+            dateLogged: new Date().toISOString(),
+            submittedBy: req.user.username // Add this for tracking
         };
 
         const { resource: createdAchievement } = await container.items.create(newAchievement);
@@ -76,8 +95,27 @@ const logAchievement = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error logging achievement:", error);
-        res.status(500).json({ message: 'Internal Server Error while logging achievement.' });
+        // Detailed error logging
+        console.error("Error logging achievement:", {
+            error: error.message,
+            stack: error.stack,
+            body: req.body,
+            user: req.user
+        });
+
+        // Send appropriate error message based on the type of error
+        if (error.code === 409) {
+            return res.status(409).json({ message: 'This achievement has already been logged.' });
+        } else if (error.code === 401) {
+            return res.status(401).json({ message: 'Authentication error. Please log in again.' });
+        } else if (error.code === 400) {
+            return res.status(400).json({ message: error.message });
+        }
+
+        res.status(500).json({ 
+            message: 'Internal Server Error while logging achievement. Please try again or contact support.',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
