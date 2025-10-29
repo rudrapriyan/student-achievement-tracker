@@ -127,12 +127,9 @@ stages:
                   { "name": "COSMOS_CONTAINER_ID", "value": "$(COSMOS_CONTAINER_ID)", "slotSetting": false }
                 ]
 
-          - script: ls -lR $(Pipeline.Workspace)
-            displayName: 'Debug: List files in workspace'
-
           - task: AzureStaticWebApp@0
             displayName: 'Deploy Frontend to Static Web App'
             inputs:
               azure_static_web_apps_api_token: $(deployment_token)
-              app_location: '$(Pipeline.Workspace)/frontend_dist'
+              app_location: 'frontend_dist'
               output_location: ''
