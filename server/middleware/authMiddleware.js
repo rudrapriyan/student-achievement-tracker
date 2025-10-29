@@ -14,7 +14,8 @@ const authMiddleware = (req, res, next) => {
     }
 
     // Verify the token using the secret from your .env file
-    jwt.verify(token, process.env.DUMMY_TOKEN, (err, user) => {
+    const jwtSecret = process.env.JWT_SECRET || process.env.DUMMY_TOKEN || 'dev-secret';
+    jwt.verify(token, jwtSecret, (err, user) => {
         if (err) {
             // Token is invalid or expired
             return res.status(403).json({ message: 'Forbidden: Invalid token.' });
@@ -31,4 +32,3 @@ const authMiddleware = (req, res, next) => {
 // This is the crucial part: exporting the function directly.
 // We must NOT wrap it in curly braces like { authMiddleware }.
 module.exports = authMiddleware;
-

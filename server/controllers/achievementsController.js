@@ -195,11 +195,128 @@ const getPendingAchievements = async (req, res) => {
 };
 
 
+/**
+ * Get all achievements for the currently logged-in student
+ */
+const getStudentAchievements = async (req, res) => {
+    try {
+        const rollNumber = req.user.rollNumber;
+        
+        if (!rollNumber) {
+            return res.status(401).json({ message: 'Roll number not found in token' });
+        }
+
+        const querySpec = {
+            query: "SELECT * FROM c WHERE c.rollNumber = @rollNumber AND c.achievementTitle != null ORDER BY c.createdAt DESC",
+            parameters: [{ name: "@rollNumber", value: rollNumber }]
+        };
+
+        const { resources: achievements } = await container.items.query(querySpec).fetchAll();
+        res.status(200).json(achievements);
+    } catch (error) {
+        console.error("Error fetching student achievements:", error);
+        res.status(500).json({ message: 'Failed to fetch achievements' });
+    }
+};
+
+/**
+ * Update an achievement (student can only edit their own)
+ * Status is reset to 'pending' after edit for re-validation
+ */
+const updateAchievement = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rollNumber = req.user.rollNumber;
+        const { achievementTitle, achievementDescription, category, level, achievementDate, issuingAuthority } = req.body;
+
+        if (!rollNumber) {
+            return res.status(401).json({ message: 'Roll number not found in token' });
+        }
+
+        // Robust fetch by query (avoids partition key assumptions)
+        const querySpec = {
+            query: "SELECT * FROM c WHERE c.id = @id",
+            parameters: [{ name: "@id", value: id }]
+        };
+        const { resources: items } = await container.items.query(querySpec).fetchAll();
+        const achievement = items && items[0];
+
+        if (!achievement) {
+            return res.status(404).json({ message: 'Achievement not found' });
+        }
+
+        if (achievement.rollNumber !== rollNumber) {
+            return res.status(403).json({ message: 'You can only edit your own achievements' });
+        }
+
+        // Update the achievement and reset status to pending
+        achievement.achievementTitle = achievementTitle ?? achievement.achievementTitle;
+        achievement.achievementDescription = achievementDescription ?? achievement.achievementDescription;
+        achievement.category = category ?? achievement.category;
+        achievement.level = level ?? achievement.level;
+        achievement.achievementDate = achievementDate ?? achievement.achievementDate;
+        achievement.issuingAuthority = issuingAuthority ?? achievement.issuingAuthority;
+        achievement.status = 'pending';
+        achievement.updatedAt = new Date().toISOString();
+
+        const { resource: updatedAchievement } = await container.items.upsert(achievement);
+
+        res.status(200).json({
+            message: 'Achievement updated successfully. It will be re-validated by admin.',
+            achievement: updatedAchievement
+        });
+    } catch (error) {
+        console.error("Error updating achievement:", error);
+        res.status(500).json({ message: 'Failed to update achievement' });
+    }
+};
+
+/**
+ * Delete an achievement (student can only delete their own)
+ */
+const deleteAchievement = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rollNumber = req.user.rollNumber;
+
+        if (!rollNumber) {
+            return res.status(401).json({ message: 'Roll number not found in token' });
+        }
+
+        // Robust fetch by query first
+        const querySpec = {
+            query: "SELECT * FROM c WHERE c.id = @id",
+            parameters: [{ name: "@id", value: id }]
+        };
+        const { resources: items } = await container.items.query(querySpec).fetchAll();
+        const achievement = items && items[0];
+
+        if (!achievement) {
+            return res.status(404).json({ message: 'Achievement not found' });
+        }
+
+        if (achievement.rollNumber !== rollNumber) {
+            return res.status(403).json({ message: 'You can only delete your own achievements' });
+        }
+
+        await container.item(achievement.id, achievement.id).delete();
+
+        res.status(200).json({ message: 'Achievement deleted successfully' });
+    } catch (error) {
+        console.error("Error deleting achievement:", error);
+        res.status(500).json({ message: 'Failed to delete achievement' });
+    }
+};
+
+
 // Export all controller functions
 module.exports = {
     logAchievement,
     validateAchievement,
     getAllAchievements,
-    getPendingAchievements
+    getPendingAchievements,
+    getStudentAchievements,
+    updateAchievement,
+    deleteAchievement
 };
 

@@ -9,7 +9,9 @@ const cors = require('cors'); // Import the cors middleware
 const { initializeDatabase } = require('./config/db');
 const achievementRoutes = require('./routes/achievements');
 const authRoutes = require('./routes/auth');
-const resumeRoutes = require('./routes/resume'); // --- ADD THIS LINE ---
+const resumeRoutes = require('./routes/resume');
+// TEMPORARILY DISABLED - Install packages first: npm install @google/generative-ai express-rate-limit
+// const aiRoutes = require('./routes/ai.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +32,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/students', require('./routes/student')); // Add student routes
 app.use('/api/profile', require('./routes/profile')); // Add profile routes
+// TEMPORARILY DISABLED - AI features will work after: npm install @google/generative-ai express-rate-limit
+// app.use('/api/ai', aiRoutes); // AI endpoints
 
 
 // --- Environment Validation ---

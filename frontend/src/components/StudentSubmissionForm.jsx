@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { Icon } from './Icon';
 import { Spinner } from './Spinner';
+import BackButton from './BackButton';
+// Temporarily disabled until packages installed: npm install @google/generative-ai
+// import AIEnhanceButton from './ai/AIEnhanceButton';
+// import useAI from '../hooks/useAI';
 
-const StudentSubmissionForm = ({ token, setSuccessMessage, setError, setIsLoading, isLoading, setView }) => {
+const StudentSubmissionForm = ({ token, toast, setIsLoading, isLoading, setView }) => {
     const [achievement, setAchievement] = useState({
         achievementTitle: '',
         category: 'academic', // Default category
@@ -11,6 +15,8 @@ const StudentSubmissionForm = ({ token, setSuccessMessage, setError, setIsLoadin
         evidenceLink: '',
         date: ''
     });
+    // const [isEnhancing, setIsEnhancing] = useState(false);
+    // const ai = useAI(token);
 
     const categories = [
         'academic',
@@ -40,10 +46,37 @@ const StudentSubmissionForm = ({ token, setSuccessMessage, setError, setIsLoadin
         }));
     };
 
+    // AI enhance temporarily disabled
+    // const handleEnhanceDescription = async () => {
+    //     if (!achievement.achievementTitle.trim()) {
+    //         toast.error('Please enter an achievement title first');
+    //         return;
+    //     }
+
+    //     setIsEnhancing(true);
+    //     try {
+    //         const result = await ai.generateDescription({
+    //             title: achievement.achievementTitle,
+    //             category: achievement.category,
+    //             level: achievement.level,
+    //             description: achievement.description
+    //         });
+            
+    //         setAchievement(prev => ({
+    //             ...prev,
+    //             description: result.description
+    //         }));
+    //         toast.success('Description enhanced with AI!');
+    //     } catch (error) {
+    //         toast.error('Failed to enhance description: ' + error.message);
+    //     } finally {
+    //         setIsEnhancing(false);
+    //     }
+    // };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        setError('');
 
         try {
             // endpoint should match server route: POST /api/achievements/log
@@ -71,7 +104,7 @@ const StudentSubmissionForm = ({ token, setSuccessMessage, setError, setIsLoadin
                 throw new Error(data.message || 'Failed to submit achievement');
             }
 
-            setSuccessMessage('Achievement submitted successfully!');
+            toast.success('Achievement submitted successfully!');
             setAchievement({
                 achievementTitle: '',
                 category: 'academic',
@@ -81,25 +114,29 @@ const StudentSubmissionForm = ({ token, setSuccessMessage, setError, setIsLoadin
                 date: ''
             });
             
-            // Add slight delay to show success message before navigation
+            // Add slight delay before navigation
             setTimeout(() => {
-                setView('resume');
+                setView('dashboard');
                 if (typeof window.scrollTo === 'function') {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
-            }, 1500);
+            }, 1000);
 
         } catch (err) {
-            setError(err.message);
+            toast.error(err.message);
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-xl shadow-2xl shadow-black/20 max-w-3xl mx-auto backdrop-blur-sm animate-fade-in">
-            <h2 className="text-3xl font-bold mb-1 text-center text-white">Log Achievement</h2>
-            <p className="text-gray-400 text-center mb-8">Record your accomplishments for future reference and validation.</p>
+        <div className="max-w-3xl mx-auto">
+            <div className="mb-4">
+                <BackButton onClick={() => setView('dashboard')} label="Back to Dashboard" />
+            </div>
+            <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-xl shadow-2xl shadow-black/20 backdrop-blur-sm animate-fade-in">
+                <h2 className="text-3xl font-bold mb-1 text-center text-white">Log Achievement</h2>
+                <p className="text-gray-400 text-center mb-8">Record your accomplishments for future reference and validation.</p>
             
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
@@ -149,6 +186,16 @@ const StudentSubmissionForm = ({ token, setSuccessMessage, setError, setIsLoadin
                         className="w-full bg-slate-800/50 text-gray-200 p-3 rounded-lg border border-slate-700 focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-all duration-300"
                         required
                     />
+                    {/* AI Enhance Button temporarily disabled 
+                    <div className="flex justify-end mt-2">
+                        <AIEnhanceButton 
+                            onClick={handleEnhanceDescription}
+                            isLoading={isEnhancing}
+                            label="✨ Generate Professional Description"
+                            size="md"
+                        />
+                    </div>
+                    */}
                     
                     <input
                         name="evidenceLink"
@@ -197,6 +244,7 @@ const StudentSubmissionForm = ({ token, setSuccessMessage, setError, setIsLoadin
                     </div>
                 </div>
             </form>
+            </div>
         </div>
     );
 };

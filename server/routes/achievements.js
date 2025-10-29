@@ -13,9 +13,18 @@ console.log("--- ROUTER RECEIVED ---", achievementController);
 
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Student Route (Protected by authMiddleware)
+// Student Routes (Protected by authMiddleware)
 // POST /api/achievements/log
 router.post('/log', authMiddleware, achievementController.logAchievement);
+
+// GET /api/achievements/student - Get current student's achievements
+router.get('/student', authMiddleware, achievementController.getStudentAchievements);
+
+// PUT /api/achievements/:id - Edit achievement (sets status back to pending)
+router.put('/:id', authMiddleware, achievementController.updateAchievement);
+
+// DELETE /api/achievements/:id - Delete achievement
+router.delete('/:id', authMiddleware, achievementController.deleteAchievement);
 
 
 // --- Admin-Only Routes (Protected by authMiddleware) ---

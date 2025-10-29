@@ -81,7 +81,8 @@ const generateResume = async (req, res) => {
     if (token) {
       try {
         const jwt = require('jsonwebtoken');
-        requester = jwt.verify(token, process.env.DUMMY_TOKEN);
+        const jwtSecret = process.env.JWT_SECRET || process.env.DUMMY_TOKEN || 'dev-secret';
+        requester = jwt.verify(token, jwtSecret);
       } catch (err) {
         return res.status(403).json({ message: 'Forbidden: Invalid token.' });
       }
@@ -122,7 +123,27 @@ const generateResume = async (req, res) => {
     }
 
     // -----------------------------------------------------------------
-    // STEP 2: Get ALL Validated Achievements
+    // STEP 2: Get Student Profile Data
+    // -----------------------------------------------------------------
+    console.log('Fetching student profile for rollNumber:', rollNumber);
+    const studentQuerySpec = {
+      query: "SELECT * FROM c WHERE c.rollNumber = @rollNumber AND c.type = 'student'",
+      parameters: [ { name: "@rollNumber", value: rollNumber } ]
+    };
+
+    let studentProfile = null;
+    try {
+      const { resources: students } = await container.items.query(studentQuerySpec).fetchAll();
+      if (students && students.length > 0) {
+        studentProfile = students[0];
+        console.log('Student profile found:', studentProfile.name);
+      }
+    } catch (error) {
+      console.error('Failed to fetch student profile:', error);
+    }
+
+    // -----------------------------------------------------------------
+    // STEP 3: Get ALL Validated Achievements
     // -----------------------------------------------------------------
     console.log('Querying achievements for rollNumber:', rollNumber);
     const querySpec = {
@@ -148,17 +169,19 @@ const generateResume = async (req, res) => {
     }
 
     // -----------------------------------------------------------------
-    // STEP 3: Write the new, much more powerful prompt
+    // STEP 4: Extract student information from profile
     // -----------------------------------------------------------------
-    
-    // Get the student's name from the first achievement record or from the JWT token
-    const studentName = achievements[0].studentName || requester.name || '';
-    
-    // If we still don't have a name, try to find it in any achievement
-    const nameFromAchievements = achievements.find(a => a.studentName)?.studentName;
-    if (!studentName && nameFromAchievements) {
-      studentName = nameFromAchievements;
-    }
+    const studentName = studentProfile?.name || requester.name || 'Student';
+    const studentEmail = studentProfile?.email || '';
+    const studentPhone = studentProfile?.phone || '';
+    const studentLocation = studentProfile?.location || '';
+    const studentLinkedin = studentProfile?.linkedin || '';
+    const studentGithub = studentProfile?.github || '';
+    const studentPortfolio = studentProfile?.portfolio || '';
+    const studentDegree = studentProfile?.degree || '';
+    const studentInstitution = studentProfile?.institution || '';
+    const studentGraduationYear = studentProfile?.graduationYear || '';
+    const studentGPA = studentProfile?.gpa || '';
 
     // Convert all achievements into a single text block for the AI
     const achievementsText = achievements.map(ach => {
@@ -180,21 +203,21 @@ CRITICAL RULES:
 {
   "personalInfo": {
     "name": "${studentName}",
-    "location": "Based on achievements or empty",
-    "email": "Not provided - leave empty",
-    "phone": "Not provided - leave empty",
-    "linkedin": "Extract from achievements if found, else empty",
-    "github": "Extract from achievements if found, else empty",
-    "portfolio": "Extract from achievements if found, else empty"
+    "location": "${studentLocation}",
+    "email": "${studentEmail}",
+    "phone": "${studentPhone}",
+    "linkedin": "${studentLinkedin}",
+    "github": "${studentGithub}",
+    "portfolio": "${studentPortfolio}"
   },
   "objective": "Write a 2-3 sentence career objective focusing on skills shown in achievements",
   "education": [
     {
-      "institution": "Extract from Academic achievements",
-      "degree": "Extract from Academic achievements",
-      "score": "Extract score/grade if available",
-      "scoreType": "CGPA/Percentage/GPA based on data",
-      "dates": "Extract from achievements"
+      "institution": "${studentInstitution || 'Extract from Academic achievements'}",
+      "degree": "${studentDegree || 'Extract from Academic achievements'}",
+      "score": "${studentGPA || 'Extract score/grade if available'}",
+      "scoreType": "${studentGPA ? 'GPA' : 'CGPA/Percentage/GPA based on data'}",
+      "dates": "${studentGraduationYear || 'Extract from achievements'}"
     }
   ],
   "technicalSkills": {
@@ -323,32 +346,94 @@ ${achievementsText}
       const awards = achievements.filter(a => ['academic', 'sports', 'arts'].includes(a.category));
       const extracurricular = achievements.filter(a => ['volunteer', 'leadership'].includes(a.category));
 
-      // Build ATS-friendly JSON resume with some smart defaults
+      // --- Pull arrays from profile (if present) ---
+      const profileSkills = Array.isArray(studentProfile?.skills) ? studentProfile.skills : [];
+      const profileEducation = Array.isArray(studentProfile?.education) ? studentProfile.education : [];
+      const profileCerts = Array.isArray(studentProfile?.certifications) ? studentProfile.certifications : [];
+
+      // Select optimal skills (limit 8-12), prioritize proficiency: expert > advanced > intermediate > beginner
+      const proficiencyRank = { expert: 4, advanced: 3, intermediate: 2, beginner: 1 };
+      const selectedSkillNames = profileSkills
+        .filter(s => s && s.name)
+        .sort((a, b) => (proficiencyRank[b.proficiency || 'intermediate'] || 0) - (proficiencyRank[a.proficiency || 'intermediate'] || 0))
+        .slice(0, 12)
+        .map(s => s.name);
+
+      // Bucket selected skills into categories for technicalSkills
+      const selectedSkillsByCategory = profileSkills
+        .filter(s => s && s.name)
+        .sort((a, b) => (proficiencyRank[b.proficiency || 'intermediate'] || 0) - (proficiencyRank[a.proficiency || 'intermediate'] || 0))
+        .slice(0, 12)
+        .reduce((acc, s) => {
+          const cat = (s.category || 'other').toLowerCase();
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(s.name);
+          return acc;
+        }, {});
+
+      // Select two education entries: ensure college/university first, then latest schooling
+      const eduWithMeta = profileEducation
+        .map(e => ({
+          ...e,
+          _end: parseInt(e.endYear || e.graduationYear || 0, 10) || 0,
+          _start: parseInt(e.startYear || 0, 10) || 0
+        }))
+        .sort((a, b) => (b._end - a._end) || (b._start - a._start));
+
+      const isCollege = (deg = "", inst = "") => {
+        const text = `${deg} ${inst}`.toLowerCase();
+        return /(b\.?(e|tech)|bachelor|college|university|be\b|btech)/.test(text);
+      };
+      const collegeEntry = eduWithMeta.find(e => isCollege(e.degree, e.institution));
+      const schoolingEntry = eduWithMeta.find(e => !isCollege(e.degree, e.institution));
+      const orderedEducation = [];
+      if (collegeEntry) orderedEducation.push(collegeEntry);
+      if (schoolingEntry) orderedEducation.push(schoolingEntry);
+      const parsedEducation = orderedEducation
+        .map(e => ({
+          institution: e.institution || studentInstitution || "",
+          degree: e.degree || studentDegree || "",
+          score: e.gpa || "",
+          scoreType: e.gpa ? 'GPA' : '',
+          dates: [e.startYear, e.endYear].filter(Boolean).join(' - ')
+        }));
+
+      // Select up to 3 certifications by date (parse if possible)
+      const selectedCerts = profileCerts
+        .map(c => ({ ...c, _date: Date.parse(c.date || '') || 0 }))
+        .sort((a, b) => b._date - a._date)
+        .slice(0, 3)
+        .map(c => ({ name: c.name, issuer: c.issuer, date: c.date, url: c.url }));
+
+      // Build ATS-friendly JSON resume with ONLY user-provided profile data
       const resume = {
         personalInfo: {
-          name: studentName || "Student", // Use a generic fallback instead of roll number
-          location: "Chennai, Tamil Nadu, India",
-          email: `${rollNumber}@rajalakshmi.edu.in`,
-          phone: "",
-          linkedin: "", // Extract if available
-          github: "", // Extract if available
-          portfolio: "" // Extract if available
+          name: studentName,
+          location: studentLocation || "Chennai, Tamil Nadu, India",
+          email: studentEmail || `${rollNumber}@rajalakshmi.edu.in`,
+          phone: studentPhone || "",
+          linkedin: studentLinkedin || "",
+          github: studentGithub || "",
+          portfolio: studentPortfolio || ""
         },
         objective: `A motivated and results-driven computer science student at Rajalakshmi Engineering College with ${achievements.length} validated achievements. Seeking opportunities to apply technical expertise and innovative problem-solving skills in a challenging role. Demonstrated ability to deliver impactful solutions through hands-on projects and collaborative experiences.`,
-        education: education.map(edu => ({
-          institution: edu.issuingAuthority || "Rajalakshmi Engineering College",
-          degree: edu.achievementTitle,
-          score: edu.achievementDescription.match(/\d+\.?\d*/)?.[0] || "",
-          scoreType: edu.achievementDescription.toLowerCase().includes('cgpa') ? 'CGPA' : 'Percentage',
-          dates: edu.achievementDate
-        })),
+        education: parsedEducation.length > 0
+          ? parsedEducation
+          : (studentInstitution && studentDegree ? [{
+              institution: studentInstitution,
+              degree: studentDegree,
+              score: studentGPA || "",
+              scoreType: studentGPA ? 'GPA' : '',
+              dates: studentGraduationYear || ""
+            }] : []),
         technicalSkills: {
-          languages: Array.from(foundTech.languages).length ? Array.from(foundTech.languages) : ["Python", "JavaScript"],
-          web: Array.from(foundTech.web).length ? Array.from(foundTech.web) : ["HTML", "CSS", "React"],
-          frameworksAndTools: Array.from(foundTech.frameworksAndTools).length ? Array.from(foundTech.frameworksAndTools) : ["Git", "VS Code"],
-          platforms: Array.from(foundTech.platforms).length ? Array.from(foundTech.platforms) : ["Windows", "Linux"],
-          concepts: Array.from(foundTech.concepts).length ? Array.from(foundTech.concepts) : ["Data Structures", "Algorithms"]
+          languages: selectedSkillsByCategory.languages || [],
+          web: selectedSkillsByCategory.web || [],
+          frameworksAndTools: selectedSkillsByCategory.tools || selectedSkillsByCategory.frameworks || [],
+          platforms: selectedSkillsByCategory.platforms || [],
+          concepts: selectedSkillsByCategory.soft || selectedSkillsByCategory.other || []
         },
+        certifications: selectedCerts,
         projects: projects.map(p => ({
           title: p.achievementTitle,
           description: p.achievementDescription,

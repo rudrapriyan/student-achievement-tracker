@@ -5,16 +5,21 @@ export const ResumeRenderer = ({ resume }) => {
   if (!resume) return null;
 
   return (
-    <div className="resume-output">
+    <div className="resume-container">
       <h1>{resume.personalInfo.name}</h1>
       
       <div className="contact-info">
         {resume.personalInfo.location && <div>{resume.personalInfo.location}</div>}
-        {resume.personalInfo.email && <div>{resume.personalInfo.email}</div>}
+        {resume.personalInfo.email && <div><a href={`mailto:${resume.personalInfo.email}`}>{resume.personalInfo.email}</a></div>}
         {resume.personalInfo.phone && <div>{resume.personalInfo.phone}</div>}
-        {resume.personalInfo.linkedin && <div><a href={resume.personalInfo.linkedin}>LinkedIn</a></div>}
-        {resume.personalInfo.github && <div><a href={resume.personalInfo.github}>GitHub</a></div>}
-        {resume.personalInfo.portfolio && <div><a href={resume.personalInfo.portfolio}>Portfolio</a></div>}
+        {(resume.personalInfo.linkedin || resume.personalInfo.github) && (
+          <div>
+            {resume.personalInfo.linkedin && <a href={resume.personalInfo.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>}
+            {resume.personalInfo.linkedin && resume.personalInfo.github && ' | '}
+            {resume.personalInfo.github && <a href={resume.personalInfo.github} target="_blank" rel="noopener noreferrer">GitHub</a>}
+          </div>
+        )}
+        {resume.personalInfo.portfolio && <div><a href={resume.personalInfo.portfolio} target="_blank" rel="noopener noreferrer">Portfolio</a></div>}
       </div>
 
       {resume.objective && (
@@ -86,6 +91,25 @@ export const ResumeRenderer = ({ resume }) => {
                   {project.githubLink && project.liveLink && ' | '}
                   {project.liveLink && <a href={project.liveLink}>Live Demo</a>}
                 </p>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {Array.isArray(resume.certifications) && resume.certifications.length > 0 && (
+        <section>
+          <h2>Certifications</h2>
+          {resume.certifications.map((cert, index) => (
+            <div key={index} className="achievement-item">
+              <h3>{cert.name}</h3>
+              <p>
+                {cert.issuer}
+                {cert.issuer && cert.date && ' | '} 
+                {cert.date}
+              </p>
+              {cert.url && (
+                <p><a href={cert.url} target="_blank" rel="noopener noreferrer">Verify</a></p>
               )}
             </div>
           ))}

@@ -7,6 +7,9 @@ const { getContainer } = require('../config/db');
 // Helper: container reference
 const container = getContainer();
 
+// Use one consistent secret everywhere
+const jwtSecret = process.env.JWT_SECRET || process.env.DUMMY_TOKEN || 'dev-secret';
+
 const login = (req, res) => {
     const { username, password } = req.body;
 
@@ -15,7 +18,7 @@ const login = (req, res) => {
 
     // --- DEBUG LOG ---
     // We are leaving this in one last time to confirm the fix.
-    console.log(`--- [SIGNING] Using DUMMY_TOKEN: '${process.env.DUMMY_TOKEN}'`);
+    console.log(`--- [SIGNING] Using unified JWT secret: '${jwtSecret ? '[set]' : '[missing]'}'`);
 
     if (username === adminUsername && password === adminPassword) {
         // --- THIS IS THE CORRECTED LOGIC ---
@@ -25,7 +28,7 @@ const login = (req, res) => {
         // Use jwt.sign() to create the actual token using the secret key.
         const token = jwt.sign(
             payload,
-            process.env.DUMMY_TOKEN,
+            jwtSecret,
             { expiresIn: '1h' } // Token expires in 1 hour
         );
         
@@ -61,7 +64,7 @@ const issueStudentToken = async (req, res) => {
         }
 
         const payload = { rollNumber, role: 'student' };
-        const token = jwt.sign(payload, process.env.DUMMY_TOKEN, { expiresIn: '1h' });
+        const token = jwt.sign(payload, jwtSecret, { expiresIn: '1h' });
         res.status(200).json({ message: 'Student token issued.', token });
     } catch (error) {
         console.error('Error issuing student token:', error);

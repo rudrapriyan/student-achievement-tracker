@@ -7,24 +7,52 @@ import StudentSubmissionForm from './components/StudentSubmissionForm';
 import ResumeGenerator from './components/ResumeGenerator';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
+import StudentNavigation from './components/StudentNavigation';
+import StudentDashboard from './components/StudentDashboard';
+import StudentProfile from './components/StudentProfile';
+import AchievementsManager from './components/AchievementsManager';
+import ToastNotification from './components/ToastNotification';
+import DiagnosticTest from './components/DiagnosticTest';
+// Temporarily disabled until packages installed
+// import ChatAssistant from './components/chat/ChatAssistant';
+import { useToast } from './hooks/useToast';
 
 
 function App() {
     const [view, setView] = useState(window.location.hash.replace('#', '') || 'landing'); // 'landing', 'student', 'adminLogin', 'adminDashboard', 'resume'
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
-    const [token, setToken] = useState(null);
-    const [studentToken, setStudentToken] = useState(null);
+    const [token, setToken] = useState(() => localStorage.getItem('adminToken') || null);
+    const [studentToken, setStudentToken] = useState(() => localStorage.getItem('studentToken') || null);
+    const { toasts, removeToast, toast } = useToast();
+
+    // Persist tokens to localStorage
+    useEffect(() => {
+        if (token) {
+            localStorage.setItem('adminToken', token);
+        } else {
+            localStorage.removeItem('adminToken');
+        }
+    }, [token]);
 
     useEffect(() => {
-        if (error || successMessage) {
-            const timer = setTimeout(() => { setError(''); setSuccessMessage(''); }, 5000);
-            return () => clearTimeout(timer);
+        if (studentToken) {
+            localStorage.setItem('studentToken', studentToken);
+        } else {
+            localStorage.removeItem('studentToken');
         }
-    }, [error, successMessage]);
+    }, [studentToken]);
 
-    // Handle hash-based navigation
+    // Auto-navigate based on stored tokens
+    useEffect(() => {
+        if (studentToken && view === 'landing') {
+            setView('dashboard');
+        } else if (token && view === 'landing') {
+            setView('adminDashboard');
+        }
+    }, []);
+
+
+    // Handle hash-based navigation and browser back/forward
     useEffect(() => {
         const handleHashChange = () => {
             const hash = window.location.hash.replace('#', '');
@@ -33,19 +61,37 @@ function App() {
             }
         };
 
+        const handlePopState = (event) => {
+            if (event.state && event.state.view) {
+                setView(event.state.view);
+            } else {
+                const hash = window.location.hash.replace('#', '') || 'landing';
+                setView(hash);
+            }
+        };
+
         window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
+        window.addEventListener('popstate', handlePopState);
+        
+        return () => {
+            window.removeEventListener('hashchange', handleHashChange);
+            window.removeEventListener('popstate', handlePopState);
+        };
     }, []);
 
     const handleViewChange = (newView) => {
-        setError(''); 
-        setSuccessMessage(''); 
         setView(newView);
+        // Update URL hash for browser navigation
+        window.history.pushState({ view: newView }, '', `#${newView}`);
+        // Smooth scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleLogout = () => {
         setToken(null);
         setStudentToken(null);
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('studentToken');
         setView('landing');
     };
     
@@ -91,6 +137,23 @@ function App() {
                 }
             `}</style>
             <div className="w-full max-w-6xl z-10">
+                {/* Show hamburger menu only for student views */}
+                {studentToken && !['landing', 'studentLogin'].includes(view) && (
+                    <StudentNavigation 
+                        currentView={view}
+                        setView={handleViewChange}
+                        onLogout={handleLogout}
+                        userName={(() => {
+                            try {
+                                const payload = JSON.parse(atob(studentToken.split('.')[1]));
+                                return payload.name || payload.username || 'Student';
+                            } catch {
+                                return 'Student';
+                            }
+                        })()}
+                    />
+                )}
+
                 <header className="flex justify-between items-center mb-10 pb-4 border-b border-slate-700/50">
                     <div className="flex items-center space-x-4 cursor-pointer" onClick={() => handleViewChange('landing')}>
                         <h1 className="text-2xl font-mono text-gray-100 tracking-tighter">Student <span className="text-cyan-400">Achievements Tracker</span></h1>
@@ -101,25 +164,25 @@ function App() {
                             Logout
                         </button>
                     )}
-                    {studentToken && view !== 'studentLogin' && (
-                        <button onClick={() => { setStudentToken(null); handleViewChange('landing'); }} className="flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-slate-800/80 border border-slate-700 text-gray-300 hover:bg-red-500/20 hover:text-red-300 transition-all duration-300 ml-4">
-                            <Icon path="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" className="w-5 h-5 mr-2" />
-                            Logout
-                        </button>
-                    )}
                 </header>
                 <main>
                     {view === 'landing' && <LandingPage setView={handleViewChange} studentToken={studentToken} />}
-                    {view === 'studentLogin' && <StudentLogin setStudentToken={setStudentToken} setView={handleViewChange} setError={setError} setSuccessMessage={setSuccessMessage} isLoading={isLoading} setIsLoading={setIsLoading} />}
-                    {view === 'student' && studentToken && <StudentSubmissionForm token={studentToken} setSuccessMessage={setSuccessMessage} setError={setError} setIsLoading={setIsLoading} isLoading={isLoading} setView={handleViewChange} />}
-                    {view === 'resume' && studentToken && <ResumeGenerator token={studentToken} setSuccessMessage={setSuccessMessage} setError={setError} setIsLoading={setIsLoading} isLoading={isLoading} setView={handleViewChange} />}
-                    {view === 'adminLogin' && <AdminLogin setToken={setToken} setView={handleViewChange} setError={setError} setIsLoading={setIsLoading} isLoading={isLoading} />}
+                    {view === 'studentLogin' && <StudentLogin setStudentToken={setStudentToken} setView={handleViewChange} toast={toast} isLoading={isLoading} setIsLoading={setIsLoading} />}
+                    {view === 'dashboard' && studentToken && <StudentDashboard token={studentToken} setView={handleViewChange} />}
+                    {view === 'profile' && studentToken && <StudentProfile token={studentToken} toast={toast} setView={handleViewChange} />}
+                    {view === 'achievements' && studentToken && <AchievementsManager token={studentToken} toast={toast} setView={handleViewChange} />}
+                    {view === 'student' && studentToken && <StudentSubmissionForm token={studentToken} toast={toast} setIsLoading={setIsLoading} isLoading={isLoading} setView={handleViewChange} />}
+                    {view === 'resume' && studentToken && <ResumeGenerator token={studentToken} toast={toast} setIsLoading={setIsLoading} isLoading={isLoading} setView={handleViewChange} />}
+                    {view === 'diagnostic' && studentToken && <DiagnosticTest token={studentToken} />}
+                    {view === 'adminLogin' && <AdminLogin setToken={setToken} setView={handleViewChange} toast={toast} setIsLoading={setIsLoading} isLoading={isLoading} />}
                     {view === 'adminDashboard' && <AdminDashboard token={token} setToken={setToken} setView={handleViewChange} />}
-                    <div className="mt-6 w-full max-w-3xl mx-auto">
-                        {error && <div className="p-4 text-center text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg shadow-lg animate-fade-in">{error}</div>}
-                        {successMessage && <div className="p-4 text-center text-sm text-green-300 bg-green-500/10 border border-green-500/30 rounded-lg shadow-lg animate-fade-in">{successMessage}</div>}
-                    </div>
                 </main>
+                
+                {/* Toast Notifications */}
+                <ToastNotification toasts={toasts} removeToast={removeToast} />
+                
+                {/* AI Chat Assistant temporarily disabled */}
+                {/* {studentToken && <ChatAssistant token={studentToken} profile={{}} achievements={[]} />} */}
             </div>
         </div>
     );
