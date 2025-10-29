@@ -131,3 +131,4 @@ stages:
               npm install -g @azure/static-web-apps-cli
               swa deploy --app-location ./frontend_dist --deployment-token $(deployment_token)
             displayName: 'Deploy Frontend via SWA CLI'
+            workingDirectory: '$(Pipeline.Workspace)'
