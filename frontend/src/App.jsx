@@ -149,7 +149,7 @@ const StudentSubmissionForm = ({ setSuccessMessage, setError, setIsLoading, isLo
     const handleSubmit = async (e) => {
         e.preventDefault(); setError(''); setSuccessMessage(''); setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:3000/api/achievements/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
+            const response = await fetch('https://achievement-log-cgemd7c5c4fndtdd.koreacentral-01.azurewebsites.net/api/achievements/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Failed to submit.');
             setSuccessMessage(data.message);
@@ -191,7 +191,7 @@ const AdminLogin = ({ setToken, setView, setError, setIsLoading, isLoading }) =>
     const handleSubmit = async (e) => {
         e.preventDefault(); setError(''); setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:3000/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials) });
+            const response = await fetch('https://achievement-log-cgemd7c5c4fndtdd.koreacentral-01.azurewebsites.net/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials) });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Login failed.');
             setToken(data.token); setView('adminDashboard');
@@ -222,7 +222,7 @@ const AdminDashboard = ({ token, setToken, setView }) => {
         setIsLoading(true); setError('');
         const endpoint = filter === 'pending' ? '/api/achievements/pending' : '/api/achievements';
         try {
-            const response = await fetch(`http://localhost:3000${endpoint}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const response = await fetch(`https://achievement-log-cgemd7c5c4fndtdd.koreacentral-01.azurewebsites.net${endpoint}`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (response.status === 403) { 
                 setToken(null);
                 setView('adminLogin');
@@ -238,7 +238,7 @@ const AdminDashboard = ({ token, setToken, setView }) => {
 
     const handleStatusUpdate = async (id, status) => {
         try {
-            const response = await fetch(`http://localhost:3000/api/achievements/${id}/validate`, {
+            const response = await fetch(`https://achievement-log-cgemd7c5c4fndtdd.koreacentral-01.azurewebsites.net/api/achievements/${id}/validate`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status })
             });
             if (!response.ok) throw new Error('Failed to update status.');
