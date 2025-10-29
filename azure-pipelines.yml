@@ -28,7 +28,7 @@ stages:
   - job: Build_Frontend
     displayName: 'Build Frontend Artifact'
     pool:
-      name: ubuntu-latest
+      vmImage: 'ubuntu-latest'
     steps:
     - task: NodeTool@0
       inputs:
@@ -57,7 +57,7 @@ stages:
   - job: Build_Server
     displayName: 'Build Server Artifact'
     pool:
-      name: ubuntu-latest
+      vmImage: 'ubuntu-latest'
     steps:
     - task: NodeTool@0
       inputs:
