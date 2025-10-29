@@ -6,8 +6,7 @@ variables:
   # This links your secret variable group
   - group: WebApp-Secrets
 
-  # These define the other pipeline variables using the correct list syntax
-  # !!! Remember to check these placeholder values !!!
+  # These define the other pipeline variables
   - name: azureServiceConnection
     value: 'AzureStudentSubscription' 
   - name: resourceGroupName
@@ -24,11 +23,11 @@ variables:
 stages:
 - stage: Build
   displayName: 'Build Stage'
+  pool:
+    vmImage: 'ubuntu-latest'
   jobs:
   - job: Build_Frontend
     displayName: 'Build Frontend Artifact'
-    pool:
-      vmImage: 'ubuntu-latest'
     steps:
     - task: NodeTool@0
       inputs:
@@ -56,8 +55,6 @@ stages:
 
   - job: Build_Server
     displayName: 'Build Server Artifact'
-    pool:
-      vmImage: 'ubuntu-latest'
     steps:
     - task: NodeTool@0
       inputs:
