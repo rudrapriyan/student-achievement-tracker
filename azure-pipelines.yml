@@ -28,7 +28,7 @@ stages:
   - job: Build_Frontend
     displayName: 'Build Frontend Artifact'
     pool:
-      name: newpool
+      name: ubuntu-latest
     steps:
     - task: NodeTool@0
       inputs:
