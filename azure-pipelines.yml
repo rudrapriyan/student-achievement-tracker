@@ -93,7 +93,7 @@ stages:
     displayName: 'Deploy to Azure'
     environment: 'production'
     pool:
-      name: newpool
+      vmImage: 'ubuntu-latest'
     strategy:
       runOnce:
         deploy:
