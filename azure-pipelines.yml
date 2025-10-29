@@ -38,7 +38,11 @@ stages:
     - script: |
         echo "--- SCRIPT STARTING ---"
         npm install
-        echo "--- NPM INSTALL COMPLETE, RUNNING BUILD NOW ---"
+        echo "--- NPM INSTALL COMPLETE, RUNNING LINT NOW ---"
+        npm run lint
+        echo "--- LINT COMPLETE, RUNNING TESTS NOW ---"
+        npm test
+        echo "--- TESTS COMPLETE, RUNNING BUILD NOW ---"
         npm run build
         echo "--- SCRIPT FINISHED ---"
       displayName: 'Install dependencies and build frontend'
@@ -61,9 +65,10 @@ stages:
       displayName: 'Install Node.js 20.x'
 
     - script: |
-        cd $(serverFolder)
         npm install --production
-      displayName: 'Install server dependencies'
+        npm test
+      displayName: 'Install server dependencies and test'
+      workingDirectory: '$(serverFolder)'
 
     - task: ArchiveFiles@2
       displayName: 'Archive Server Files'
