@@ -53,7 +53,7 @@ stages:
   - job: Build_Server
     displayName: 'Build Server Artifact'
     pool:
-      name: newpool
+      name: ubuntu-latest
     steps:
     - task: NodeTool@0
       inputs:
