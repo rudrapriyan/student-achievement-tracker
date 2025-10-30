@@ -38,10 +38,10 @@ stages:
       displayName: 'Initialize CodeQL'
       inputs:
         languages: 'javascript'
+        source-root: '$(frontendFolder)'
 
     - task: CodeQL.ql-actions-autobuild@1
       displayName: 'CodeQL Autobuild'
-      workingDirectory: '$(frontendFolder)'
 
     - task: CodeQL.ql-actions-analyze@1
       displayName: 'Perform CodeQL Analysis'
@@ -64,6 +64,7 @@ stages:
       displayName: 'Initialize CodeQL'
       inputs:
         languages: 'javascript'
+        source-root: '$(serverFolder)'
 
     - task: CodeQL.ql-actions-autobuild@1
       displayName: 'CodeQL Autobuild'
