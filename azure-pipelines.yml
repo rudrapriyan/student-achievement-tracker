@@ -137,3 +137,19 @@ stages:
               swa deploy --app-location ./frontend_dist --deployment-token $(deployment_token)
             displayName: 'Deploy Frontend via SWA CLI'
             workingDirectory: '$(Pipeline.Workspace)'
+
+  - job: ZAP_Scan
+    displayName: 'OWASP ZAP Scan'
+    dependsOn: Deploy_Services
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        docker run --rm -v $(Pipeline.Workspace):/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py -t https://zealous-meadow-02e133900-preview.eastasia.1.azurestaticapps.net/ -g gen.conf -r report.html
+      displayName: 'Run ZAP Baseline Scan'
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish ZAP Report'
+      inputs:
+        targetPath: '$(Pipeline.Workspace)/report.html'
+        artifact: 'ZAP_Report'
