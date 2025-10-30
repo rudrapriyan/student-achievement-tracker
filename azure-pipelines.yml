@@ -147,15 +147,19 @@ stages:
       vmImage: 'ubuntu-latest'
     steps:
     - script: |
+        echo "Creating reports directory..."
+        mkdir -p $(System.DefaultWorkingDirectory)/zap-reports
         echo "Running OWASP ZAP Baseline Scan..."
-        docker run --rm -v $(System.DefaultWorkingDirectory):/zap/wrk \
+        docker run --rm \
+          -v $(System.DefaultWorkingDirectory)/zap-reports:/zap/wrk \
           owasp/zap2docker-stable zap-baseline.py \
           -t https://$(backendAppName).azurewebsites.net \
           -r zap_report.html || true
+        echo "ZAP Scan completed. Report stored in $(System.DefaultWorkingDirectory)/zap-reports/zap_report.html"
       displayName: 'Run ZAP Baseline Scan'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish ZAP Scan Report'
       inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)/zap_report.html'
+        targetPath: '$(System.DefaultWorkingDirectory)/zap-reports/zap_report.html'
         artifact: 'ZAP_Report'
