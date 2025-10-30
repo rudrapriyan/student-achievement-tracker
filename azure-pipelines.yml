@@ -136,6 +136,9 @@ stages:
 # ----------------------
 # 🔒 OWASP ZAP SECURITY SCAN STAGE
 # ----------------------
+# ----------------------
+# 🔒 OWASP ZAP SECURITY SCAN STAGE
+# ----------------------
 - stage: Security
   displayName: 'OWASP ZAP Baseline Scan'
   dependsOn: Deploy
@@ -150,11 +153,8 @@ stages:
         echo "Creating reports directory..."
         mkdir -p $(System.DefaultWorkingDirectory)/zap-reports
         echo "Running OWASP ZAP Baseline Scan..."
-        docker run --rm \
-          -v $(System.DefaultWorkingDirectory)/zap-reports:/zap/wrk \
-          **owasp/zap2docker-stable** zap-baseline.py \
-          -t https://$(backendAppName).azurewebsites.net \
-          -r zap_report.html || true
+        # FIX APPLIED: The docker run command is now a single, continuous line
+        docker run --rm -v $(System.DefaultWorkingDirectory)/zap-reports:/zap/wrk owasp/zap2docker-stable zap-baseline.py -t https://$(backendAppName).azurewebsites.net -r zap_report.html || true
         echo "ZAP Scan completed. Report stored in $(System.DefaultWorkingDirectory)/zap-reports/zap_report.html"
       displayName: 'Run ZAP Baseline Scan'
 
