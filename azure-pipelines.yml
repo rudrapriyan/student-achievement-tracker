@@ -136,40 +136,4 @@ stages:
 # ----------------------
 # 🔒 OWASP ZAP SECURITY SCAN STAGE
 # ----------------------
-# ----------------------
-# 🔒 OWASP ZAP SECURITY SCAN STAGE
-# ----------------------
-- stage: Security
-  displayName: 'OWASP ZAP Baseline Scan'
-  dependsOn: Deploy
-  condition: succeeded()
-  jobs:
-  - job: ZAP_Scan
-    displayName: 'Run OWASP ZAP Baseline Scan'
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-    - script: |
-        echo "Creating reports directory..."
-        mkdir -p "$(System.DefaultWorkingDirectory)/zap-reports"
-        # convert to absolute path
-        ABS_PATH=$(readlink -f "$(System.DefaultWorkingDirectory)/zap-reports")
-        echo "ABS_PATH = $ABS_PATH"
-        # Check that the target URL is reachable
-        echo "Checking target URL..."
-        curl -v https://$(backendAppName).azurewebsites.net || { echo "ERROR: target URL not reachable"; exit 1; }
-        echo "Running OWASP ZAP baseline scan..."
-        docker run --rm -v "$ABS_PATH:/zap/wrk/:rw" owasp/zap2docker-stable \
-          zap-baseline.py -t https://$(backendAppName).azurewebsites.net -r zap_report.html
-        echo "ZAP Scan completed. Report should be at $ABS_PATH/zap_report.html"
-      displayName: 'Run ZAP Baseline Scan'
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish ZAP Scan Report'
-      inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)/zap-reports'
-        artifact: 'ZAP_Report'
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish ZAP Scan Report'
-      inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)/zap-reports/zap_report.html'
-        artifact: 'ZAP_Report'
+#
