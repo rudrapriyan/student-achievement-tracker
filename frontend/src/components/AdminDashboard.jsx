@@ -13,7 +13,7 @@ const AdminDashboard = ({ token, setToken, setView }) => {
             setIsLoading(true);
             setError('');
             try {
-                const res = await fetch('http://localhost:3000/api/achievements', {
+                const res = await fetch('https://achievement-log-cgemd7c5c4fndtdd.koreacentral-01.azurewebsites.net/api/achievements', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.status === 403) {

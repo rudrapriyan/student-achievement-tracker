@@ -15,7 +15,7 @@ const AdminLogin = ({ setToken, setView, setError, setIsLoading, isLoading }) =>
         setError('');
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:3000/api/auth/login', {
+            const response = await fetch('https://achievement-log-cgemd7c5c4fndtdd.koreacentral-01.azurewebsites.net/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(form)

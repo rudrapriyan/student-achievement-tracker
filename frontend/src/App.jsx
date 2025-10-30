@@ -19,8 +19,7 @@ import { useToast } from './hooks/useToast';
 
 
 function App() {
-    // NOTE: state initialization and logic are updated to reflect the features in your latest branch.
-    const [view, setView] = useState(window.location.hash.replace('#', '') || 'landing'); // 'landing', 'student', 'adminLogin', 'adminDashboard', 'resume'
+    const [view, setView] = useState('landing'); // 'landing', 'student', 'adminLogin', 'adminDashboard'
     const [isLoading, setIsLoading] = useState(false);
     const [token, setToken] = useState(() => localStorage.getItem('adminToken') || null);
     const [studentToken, setStudentToken] = useState(() => localStorage.getItem('studentToken') || null);

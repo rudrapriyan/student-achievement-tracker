@@ -45,7 +45,7 @@ const StudentLogin = ({ setStudentToken, setView, toast, isLoading, setIsLoading
         }
 
         try {
-            const response = await fetch(`http://localhost:3000${endpoint}`, {
+            const response = await fetch(`https://achievement-log-cgemd7c5c4fndtdd.koreacentral-01.azurewebsites.net${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(isRegistering ? form : {

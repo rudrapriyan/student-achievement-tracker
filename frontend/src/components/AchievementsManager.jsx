@@ -18,7 +18,7 @@ const AchievementsManager = ({ token, toast, setView }) => {
 
     const fetchAchievements = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/achievements/student', {
+            const response = await fetch('https://achievement-log-cgemd7c5c4fndtdd.koreacentral-01.azurewebsites.net/api/achievements/student', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -50,7 +50,7 @@ const AchievementsManager = ({ token, toast, setView }) => {
         setIsSaving(true);
         try {
             console.log('Saving achievement:', id, editForm);
-            const response = await fetch(`http://localhost:3000/api/achievements/${id}`, {
+            const response = await fetch(`https://achievement-log-cgemd7c5c4fndtdd.koreacentral-01.azurewebsites.net/api/achievements/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -82,7 +82,7 @@ const AchievementsManager = ({ token, toast, setView }) => {
         if (!window.confirm('Are you sure you want to delete this achievement?')) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/api/achievements/${id}`, {
+            const response = await fetch(`https://achievement-log-cgemd7c5c4fndtdd.koreacentral-01.azurewebsites.net/api/achievements/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
