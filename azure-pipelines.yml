@@ -140,7 +140,7 @@ stages:
       vmImage: 'ubuntu-latest'
     steps:
     - script: |
-        docker run --rm -v $(Pipeline.Workspace):/zap/wrk/:rw softwaresecurityproject/zap-stable zap-baseline.py -t https://zealous-meadow-02e133900-preview.eastasia.1.azurestaticapps.net/ -g gen.conf -r report.html
+        docker run --rm -v $(Pipeline.Workspace):/zap/wrk/:rw owasp/zap2docker-stable zap-baseline.py -t https://zealous-meadow-02e133900-preview.eastasia.1.azurestaticapps.net/ -g gen.conf -r report.html
       displayName: 'Run ZAP Baseline Scan'
 
     - task: PublishPipelineArtifact@1
