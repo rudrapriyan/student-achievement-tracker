@@ -1,144 +1,3 @@
-# This pipeline is triggered on every push to the 'main' branch.
-trigger:
-- main
-
-variables:
-  # This links your secret variable group
-  - group: WebApp-Secrets
-
-  # These define the other pipeline variables
-  - name: azureServiceConnection
-    value: 'AzureStudentSubscription' 
-  - name: resourceGroupName
-    value: 'cloud-project'                
-  - name: backendAppName
-    value: 'achievement-log'        
-  - name: frontendAppName
-    value: 'achievement-log'      
-  - name: frontendFolder
-    value: 'frontend'
-  - name: serverFolder
-    value: 'server'
-
-stages:
-- stage: Build
-  displayName: 'Build Stage'
-  pool:
-    vmImage: 'ubuntu-latest'
-  jobs:
-  - job: Build_Frontend
-    displayName: 'Build Frontend Artifact'
-    steps:
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '20.x'
-      displayName: 'Install Node.js 20.x'
-
-    - script: |
-        echo "--- SCRIPT STARTING ---"
-        npm install
-        echo "--- NPM INSTALL COMPLETE, RUNNING LINT NOW ---"
-        npm run lint
-        echo "--- LINT COMPLETE, RUNNING TESTS NOW ---"
-        npm test
-        echo "--- TESTS COMPLETE, RUNNING BUILD NOW ---"
-        npm run build
-        echo "--- SCRIPT FINISHED ---"
-      displayName: 'Install dependencies and build frontend'
-      workingDirectory: '$(frontendFolder)'
-
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish Frontend Artifact'
-      inputs:
-        targetPath: '$(frontendFolder)/dist'
-        artifact: 'frontend_dist'
-
-  - job: Build_Server
-    displayName: 'Build Server Artifact'
-    steps:
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '20.x'
-      displayName: 'Install Node.js 20.x'
-
-    - script: |
-        npm install --production
-        npm test
-      displayName: 'Install server dependencies and test'
-      workingDirectory: '$(serverFolder)'
-
-    - task: ArchiveFiles@2
-      displayName: 'Archive Server Files'
-      inputs:
-        rootFolderOrFile: '$(serverFolder)'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/server.zip'
-
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish Server Artifact'
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)/server.zip'
-        artifact: 'server_dist'
-
-- stage: Deploy
-  displayName: 'Deploy Stage'
-  dependsOn: Build
-  condition: succeeded()
-  jobs:
-  - deployment: Deploy_Services
-    displayName: 'Deploy to Azure'
-    environment: 'production'
-    pool:
-      vmImage: 'ubuntu-latest'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download All Artifacts'
-            inputs:
-              path: '$(Pipeline.Workspace)'
-
-          - task: AzureWebApp@1
-            displayName: 'Deploy Backend to App Service'
-            inputs:
-              azureSubscription: $(azureServiceConnection)
-              appType: 'webAppLinux'
-              appName: $(backendAppName)
-              package: '$(Pipeline.Workspace)/server_dist/server.zip'
-              runtimeStack: 'NODE|20-lts'
-
-          - task: AzureAppServiceSettings@1
-            displayName: 'Update Backend App Settings with Secrets'
-            inputs:
-              azureSubscription: $(azureServiceConnection)
-              appName: $(backendAppName)
-              resourceGroupName: $(resourceGroupName)
-              appSettings: |
-                [
-                  { "name": "PORT", "value": "$(PORT)", "slotSetting": false },
-                  { "name": "ADMIN_USERNAME", "value": "$(ADMIN_USERNAME)", "slotSetting": false },
-                  { "name": "ADMIN_PASSWORD", "value": "$(ADMIN_PASSWORD)", "slotSetting": false },
-                  { "name": "DUMMY_TOKEN", "value": "$(DUMMY_TOKEN)", "slotSetting": false },
-                  { "name": "COSMOS_ENDPOINT", "value": "$(COSMOS_ENDPOINT)", "slotSetting": false },
-                  { "name": "COSMOS_KEY", "value": "$(COSMOS_KEY)", "slotSetting": false },
-                  { "name": "COSMOS_DATABASE_ID", "value": "$(COSMOS_DATABASE_ID)", "slotSetting": false },
-                  { "name": "COSMOS_CONTAINER_ID", "value": "$(COSMOS_CONTAINER_ID)", "slotSetting": false }
-                ]
-
-          - script: |
-              npm install -g @azure/static-web-apps-cli
-              swa deploy --app-location ./frontend_dist --deployment-token $(deployment_token)
-            displayName: 'Deploy Frontend via SWA CLI'
-            workingDirectory: '$(Pipeline.Workspace)'
-
-# ----------------------
-# 🔒 OWASP ZAP SECURITY SCAN STAGE
-# ----------------------
-# ----------------------
-# 🔒 OWASP ZAP SECURITY SCAN STAGE
-# ----------------------
 - stage: Security
   displayName: 'OWASP ZAP Baseline Scan'
   dependsOn: Deploy
@@ -151,15 +10,20 @@ stages:
     steps:
     - script: |
         echo "Creating reports directory..."
-        mkdir -p $(System.DefaultWorkingDirectory)/zap-reports
-        echo "Running OWASP ZAP Baseline Scan..."
-        # FIX APPLIED: The docker run command is now a single, continuous line
-        docker run --rm -v $(System.DefaultWorkingDirectory)/zap-reports:/zap/wrk owasp/zap2docker-stable zap-baseline.py -t https://$(backendAppName).azurewebsites.net -r zap_report.html || true
-        echo "ZAP Scan completed. Report stored in $(System.DefaultWorkingDirectory)/zap-reports/zap_report.html"
+        mkdir -p "$(System.DefaultWorkingDirectory)/zap-reports"
+        # convert to absolute path
+        ABS_PATH=$(readlink -f "$(System.DefaultWorkingDirectory)/zap-reports")
+        echo "ABS_PATH = $ABS_PATH"
+        # Check that the target URL is reachable
+        echo "Checking target URL..."
+        curl -v https://$(backendAppName).azurewebsites.net || { echo "ERROR: target URL not reachable"; exit 1; }
+        echo "Running OWASP ZAP baseline scan..."
+        docker run --rm -v "$ABS_PATH:/zap/wrk/:rw" owasp/zap2docker-stable \
+          zap-baseline.py -t https://$(backendAppName).azurewebsites.net -r zap_report.html
+        echo "ZAP Scan completed. Report should be at $ABS_PATH/zap_report.html"
       displayName: 'Run ZAP Baseline Scan'
-
     - task: PublishPipelineArtifact@1
       displayName: 'Publish ZAP Scan Report'
       inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)/zap-reports/zap_report.html'
+        targetPath: '$(System.DefaultWorkingDirectory)/zap-reports'
         artifact: 'ZAP_Report'
