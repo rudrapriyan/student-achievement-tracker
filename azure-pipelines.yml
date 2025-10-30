@@ -152,7 +152,7 @@ stages:
         echo "Running OWASP ZAP Baseline Scan..."
         docker run --rm \
           -v $(System.DefaultWorkingDirectory)/zap-reports:/zap/wrk \
-          softwaresecurityproject/zap-stable zap-baseline.py \
+          **owasp/zap2docker-stable** zap-baseline.py \
           -t https://$(backendAppName).azurewebsites.net \
           -r zap_report.html || true
         echo "ZAP Scan completed. Report stored in $(System.DefaultWorkingDirectory)/zap-reports/zap_report.html"
