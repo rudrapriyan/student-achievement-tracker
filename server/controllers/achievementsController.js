@@ -10,9 +10,15 @@ const container = getContainer();
 /**
  * Logs a new student achievement.
  */
+/**
+ * Logs a new student achievement.
+ */
 const logAchievement = async (req, res) => {
     try {
-        const {
+        // User is attached by authMiddleware
+        const user = req.user;
+
+        let {
             studentName,
             rollNumber,
             achievementTitle,
@@ -21,11 +27,16 @@ const logAchievement = async (req, res) => {
             level,
             achievementDate,
             issuingAuthority,
-            evidenceLink // Now a required field
+            evidenceLink
         } = req.body;
 
+        // Auto-fill from user profile if not provided
+        if (user) {
+            if (!studentName) studentName = user.name;
+            if (!rollNumber) rollNumber = user.username; // Assuming username is rollNumber for students
+        }
+
         // --- UPDATED VALIDATION ---
-        // Basic validation now includes evidenceLink
         if (!studentName || !rollNumber || !achievementTitle || !category || !level || !achievementDate || !issuingAuthority || !evidenceLink) {
             return res.status(400).json({
                 message: 'Missing required fields: All fields, including Evidence Link, are now required.'
@@ -50,6 +61,8 @@ const logAchievement = async (req, res) => {
 
         const newAchievement = {
             id: uuidv4(),
+            type: 'achievement', // Discriminator
+            student_id: user ? user.id : null, // Link to user
             studentName,
             rollNumber,
             achievementTitle,
@@ -64,7 +77,7 @@ const logAchievement = async (req, res) => {
         };
 
         const { resource: createdAchievement } = await container.items.create(newAchievement);
-        
+
         res.status(201).json({
             message: 'Achievement logged successfully and is pending validation.',
             achievement: {
@@ -78,6 +91,24 @@ const logAchievement = async (req, res) => {
     } catch (error) {
         console.error("Error logging achievement:", error);
         res.status(500).json({ message: 'Internal Server Error while logging achievement.' });
+    }
+};
+
+/**
+ * Retrieves achievements for the logged-in user.
+ */
+const getMyAchievements = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const querySpec = {
+            query: "SELECT * FROM c WHERE c.student_id = @userId AND c.type = 'achievement'",
+            parameters: [{ name: "@userId", value: userId }]
+        };
+        const { resources: achievements } = await container.items.query(querySpec).fetchAll();
+        res.status(200).json(achievements);
+    } catch (error) {
+        console.error("Error fetching my achievements:", error);
+        res.status(500).json({ message: 'Internal Server Error.' });
     }
 };
 
@@ -100,7 +131,7 @@ const validateAchievement = async (req, res) => {
             query: "SELECT * FROM c WHERE c.id = @id",
             parameters: [{ name: "@id", value: id }]
         };
-        
+
         const { resources: items } = await container.items.query(querySpec).fetchAll();
         const achievement = items[0];
 
@@ -108,7 +139,7 @@ const validateAchievement = async (req, res) => {
             console.warn(`--- [VALIDATE] Query succeeded but no resource was found for ID: ${id}`);
             return res.status(404).json({ message: 'Achievement not found.' });
         }
-        
+
         achievement.status = status;
         const { resource: updatedAchievement } = await container.items.upsert(achievement);
         res.status(200).json({ message: 'Achievement status updated successfully.', achievement: updatedAchievement });
@@ -118,7 +149,7 @@ const validateAchievement = async (req, res) => {
             console.warn(`--- [VALIDATE] Caught 404 error for achievement ID: ${id}.`);
             return res.status(404).json({ message: 'Achievement not found.' });
         }
-        
+
         console.error("Error validating achievement:", error);
         res.status(500).json({ message: 'Internal Server Error while updating achievement.' });
     }
@@ -157,11 +188,62 @@ const getPendingAchievements = async (req, res) => {
 };
 
 
+/**
+ * Retrieves analytics data for the admin dashboard.
+ */
+const getAdminAnalytics = async (req, res) => {
+    try {
+        // Query 1: Status Counts
+        const statusQuery = {
+            query: "SELECT c.status, COUNT(1) as count FROM c WHERE (c.type = 'achievement' OR NOT IS_DEFINED(c.type)) GROUP BY c.status"
+        };
+        const { resources: statusData } = await container.items.query(statusQuery).fetchAll();
+
+        // Query 2: Category Counts
+        const categoryQuery = {
+            query: "SELECT c.category, COUNT(1) as count FROM c WHERE (c.type = 'achievement' OR NOT IS_DEFINED(c.type)) GROUP BY c.category"
+        };
+        const { resources: categoryData } = await container.items.query(categoryQuery).fetchAll();
+
+        // Query 3: Level Counts
+        const levelQuery = {
+            query: "SELECT c.level, COUNT(1) as count FROM c WHERE (c.type = 'achievement' OR NOT IS_DEFINED(c.type)) GROUP BY c.level"
+        };
+        const { resources: levelData } = await container.items.query(levelQuery).fetchAll();
+
+        // Process data into a friendly format
+        const stats = {
+            total: 0,
+            pending: 0,
+            validated: 0,
+            rejected: 0,
+            byCategory: [],
+            byLevel: []
+        };
+
+        statusData.forEach(item => {
+            stats[item.status] = item.count;
+            stats.total += item.count;
+        });
+
+        stats.byCategory = categoryData.map(item => ({ name: item.category, value: Math.round(item.count) }));
+        stats.byLevel = levelData.map(item => ({ name: item.level, value: Math.round(item.count) }));
+
+        res.status(200).json(stats);
+
+    } catch (error) {
+        console.error("Error fetching admin analytics:", error);
+        res.status(500).json({ message: 'Internal Server Error while fetching analytics.' });
+    }
+};
+
 // Export all controller functions
 module.exports = {
     logAchievement,
     validateAchievement,
     getAllAchievements,
-    getPendingAchievements
+    getPendingAchievements,
+    getMyAchievements,
+    getAdminAnalytics
 };
 

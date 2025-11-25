@@ -15,7 +15,13 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 // --- Public Route ---
 // POST /api/achievements/log
-router.post('/log', achievementController.logAchievement);
+router.post('/log', authMiddleware, achievementController.logAchievement);
+
+// GET /api/achievements/my-achievements
+router.get('/my-achievements', authMiddleware, achievementController.getMyAchievements);
+
+// GET /api/achievements/analytics
+router.get('/analytics', authMiddleware, achievementController.getAdminAnalytics); // New Analytics Route
 
 
 // --- Admin-Only Routes (Protected by authMiddleware) ---

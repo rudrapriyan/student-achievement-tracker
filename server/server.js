@@ -9,6 +9,8 @@ const cors = require('cors'); // Import the cors middleware
 const { initializeDatabase } = require('./config/db');
 const achievementRoutes = require('./routes/achievements');
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/user');
+const resumeRoutes = require('./routes/resume');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,6 +28,8 @@ app.use(express.json());
 // --- API Routes ---
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/resume', resumeRoutes);
 
 
 // --- Server Startup ---
