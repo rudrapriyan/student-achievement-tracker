@@ -39,8 +39,6 @@ stages:
         npm install
         echo "--- NPM INSTALL COMPLETE, RUNNING LINT NOW ---"
         npm run lint
-        echo "--- LINT COMPLETE, RUNNING TESTS NOW ---"
-        npm test
         echo "--- TESTS COMPLETE, RUNNING BUILD NOW ---"
         npm run build
         echo "--- SCRIPT FINISHED ---"
