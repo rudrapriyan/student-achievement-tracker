@@ -126,7 +126,8 @@ stages:
                   { "name": "COSMOS_ENDPOINT", "value": "$(COSMOS_ENDPOINT)", "slotSetting": false },
                   { "name": "COSMOS_KEY", "value": "$(COSMOS_KEY)", "slotSetting": false },
                   { "name": "COSMOS_DATABASE_ID", "value": "$(COSMOS_DATABASE_ID)", "slotSetting": false },
-                  { "name": "COSMOS_CONTAINER_ID", "value": "$(COSMOS_CONTAINER_ID)", "slotSetting": false }
+                  { "name": "COSMOS_CONTAINER_ID", "value": "$(COSMOS_CONTAINER_ID)", "slotSetting": false },
+                  { "name": "GEMINI_API_KEY", "value": "$(GEMINI_API_KEY)", "slotSetting": false }
                 ]
 
           - script: |
