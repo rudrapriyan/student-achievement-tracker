@@ -12,3 +12,10 @@
   "status": 404,
   "statusText": "Not Found"
 }
+
+[2025-11-25T13:17:43.159Z] ERROR:
+[GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent: [503 Service Unavailable] The model is overloaded. Please try again later.
+{
+  "status": 503,
+  "statusText": "Service Unavailable"
+}
