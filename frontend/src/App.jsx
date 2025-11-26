@@ -22,6 +22,7 @@ import SubmitAchievement from './pages/SubmitAchievement';
 // To keep it clean, I will extract AdminDashboard to a file in the next step. 
 // For now, I'll import it (assuming it exists) to make the code clean.
 import AdminDashboard from './pages/AdminDashboard';
+import Chatbot from './components/Chatbot';
 
 const Navigation = () => {
     const { user, logout } = useAuth();
@@ -128,12 +129,21 @@ function App() {
                                 } />
                             </Routes>
                         </main>
+                        {/* Global Chatbot - Visible only when logged in (Navigation handles auth check logic, but we can double check or rely on Navigation's existence implies auth context is active, but actually we need to access auth context. The Navigation component uses useAuth. We can put Chatbot inside Navigation or just here. But App doesn't have access to 'user' directly unless we wrap it. Wait, App has AuthProvider. We need a wrapper component to access context. Or we can put it in Navigation. Let's put it in Navigation for simplicity as it already has user check.) */}
+                        {/* Actually, Navigation is a good place. Let's move it there. */}
                     </div>
+                    <GlobalChatbot />
                 </div>
             </Router>
         </AuthProvider>
     );
 }
+
+const GlobalChatbot = () => {
+    const { user } = useAuth();
+    if (!user) return null;
+    return <Chatbot />;
+};
 
 export default App;
 

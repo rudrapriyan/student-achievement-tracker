@@ -11,6 +11,7 @@ const achievementRoutes = require('./routes/achievements');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const resumeRoutes = require('./routes/resume');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +31,7 @@ app.use('/api/achievements', achievementRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/resume', resumeRoutes);
+app.use('/api/chat', chatRoutes);
 
 
 // --- Server Startup ---

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../api';
 import { Spinner, Icon } from './UI';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const AdminAnalytics = () => {
     const { token } = useAuth();
@@ -18,11 +18,24 @@ const AdminAnalytics = () => {
                 });
                 if (!response.ok) throw new Error('Failed to fetch analytics.');
                 const data = await response.json();
-                // Ensure values are numbers for charts
+
+                // Process and aggregate data to handle potential duplicates and ensure numbers
                 if (data.byCategory) {
-                    data.byCategory = data.byCategory.map(item => ({ ...item, value: Number(item.value) }));
-                    console.log('Chart Data:', data.byCategory);
+                    const categoryMap = new Map();
+                    data.byCategory.forEach(item => {
+                        const name = item.name; // Keep original case or .toLowerCase() if needed. Let's trust backend grouping but handle duplicates if any.
+                        const val = Number(item.value);
+                        if (categoryMap.has(name)) {
+                            categoryMap.set(name, categoryMap.get(name) + val);
+                        } else {
+                            categoryMap.set(name, val);
+                        }
+                    });
+
+                    data.byCategory = Array.from(categoryMap, ([name, count]) => ({ name, count }));
+                    console.log('Processed Chart Data:', data.byCategory);
                 }
+
                 if (data.byLevel) {
                     data.byLevel = data.byLevel.map(item => ({ ...item, value: Number(item.value) }));
                 }
@@ -95,28 +108,44 @@ const AdminAnalytics = () => {
                         <span className="w-2 h-6 bg-cyan-500 mr-3 rounded-full"></span>
                         Achievements by Category
                     </h3>
-                    <div className="overflow-x-auto pb-4">
-                        <BarChart width={Math.max(600, stats.byCategory.length * 80)} height={320} data={stats.byCategory} margin={{ top: 20, right: 30, left: 40, bottom: 60 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                            <XAxis
-                                dataKey="name"
-                                stroke="#94a3b8"
-                                tick={{ fill: '#94a3b8', fontSize: 12 }}
-                                axisLine={false}
-                                tickLine={false}
-                                interval={0}
-                                angle={-45}
-                                textAnchor="end"
-                                height={60}
-                            />
-                            <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f1f5f9' }}
-                                itemStyle={{ color: '#22d3ee' }}
-                                cursor={{ fill: '#334155', opacity: 0.4 }}
-                            />
-                            <Bar dataKey="value" fill="#22d3ee" radius={[4, 4, 0, 0]} barSize={40} />
-                        </BarChart>
+                    <div className="h-80 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={stats.byCategory} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                <XAxis
+                                    dataKey="name"
+                                    stroke="#94a3b8"
+                                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    interval={0}
+                                    angle={-45}
+                                    textAnchor="end"
+                                    height={60}
+                                />
+                                <YAxis
+                                    type="number"
+                                    stroke="#94a3b8"
+                                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    allowDecimals={false}
+                                />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f1f5f9' }}
+                                    itemStyle={{ color: '#22d3ee' }}
+                                    cursor={{ stroke: '#334155', strokeWidth: 1 }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="count"
+                                    stroke="#22d3ee"
+                                    strokeWidth={3}
+                                    dot={{ r: 4, fill: '#22d3ee', strokeWidth: 2, stroke: '#0f172a' }}
+                                    activeDot={{ r: 6, strokeWidth: 0 }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
