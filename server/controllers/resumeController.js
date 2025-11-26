@@ -62,7 +62,7 @@ const generateResume = async (req, res) => {
         `;
 
         // 4. Call Gemini API
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
