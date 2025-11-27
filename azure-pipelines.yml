@@ -83,6 +83,28 @@ stages:
         targetPath: '$(Build.ArtifactStagingDirectory)/server.zip'
         artifact: 'server_dist'
 
+  - job: CodeQL_Analysis
+    displayName: 'CodeQL Security Scan'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        wget -q https://github.com/github/codeql-cli-binaries/releases/latest/download/codeql-linux64.zip
+        unzip -q codeql-linux64.zip
+      displayName: Download CodeQL CLI
+
+    - script: |
+        ./codeql/codeql database create codeql-db --language=javascript --source-root=.
+        ./codeql/codeql pack download codeql/javascript-queries
+        ./codeql/codeql database analyze codeql-db --format=sarif-latest --output=codeql-results.sarif codeql/javascript-queries:codeql-suites/javascript-lgtm.qls
+      displayName: Build & CodeQL analyze (JS/TS)
+
+    - script: |
+        echo "$GITHUB_TOKEN" | ./codeql/codeql github upload-results --repository=rudrapriyan/student-achievement-tracker --ref="refs/heads/$BUILD_SOURCEBRANCHNAME" --commit="$BUILD_SOURCEVERSION" --sarif=codeql-results.sarif --github-auth-stdin
+      env:
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+      displayName: Upload SARIF to GitHub
+
 - stage: Deploy
   displayName: 'Deploy Stage'
   dependsOn: Build
